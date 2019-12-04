@@ -7,8 +7,8 @@ namespace App
 {
     public abstract class Day
     {
-        private static string cookieSession = "your-session-cookie-here";
-
+        private static string cookieSession = File.ReadAllText("my-once-secret-session.secret");
+        
         public Day()
         {
             int day = int.Parse(GetType().Name.Replace("Day", ""));
