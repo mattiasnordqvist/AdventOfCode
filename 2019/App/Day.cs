@@ -8,8 +8,8 @@ namespace App
 {
     public abstract class Day
     {
-        private static string cookieSession = "53616c7465645f5fa6cc3fc4c2b5bc9901464963d7ed37f51480b47f4b621ae62c09894ce8171ee9e0c6ce09d3554e32";
-
+        private static string cookieSession = "your-session-cookie-here";
+                                               
         public List<(string, string)> part1Tests = new List<(string, string)>();
         public List<(string, string)> part2Tests = new List<(string, string)>();
 
