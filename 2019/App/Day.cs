@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -9,9 +8,6 @@ namespace App
     public abstract class Day
     {
         private static string cookieSession = "your-session-cookie-here";
-                                               
-        public List<(string, string)> part1Tests = new List<(string, string)>();
-        public List<(string, string)> part2Tests = new List<(string, string)>();
 
         public Day()
         {
@@ -39,15 +35,6 @@ namespace App
 
         protected abstract string Part1Code(string data);
         protected abstract string Part2Code(string data);
-
-        public void AddTestForPart1(string input, string expected) {
-            part1Tests.Add((input, expected));
-        }
-
-        public void AddTestForPart2(string input, string expected)
-        {
-            part2Tests.Add((input, expected));
-        }
 
         private string GetData()
         {
