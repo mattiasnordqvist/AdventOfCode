@@ -8,7 +8,10 @@ namespace App
 {
     public abstract class Day
     {
-        private static string cookieSession = "53616c7465645f5ffd8e6919f4a184ef0f7562c6270092ea95b318f527b1bcdcfdaaa9cf1751ff2c3ef590035e6b41fa";
+        private static string cookieSession = "53616c7465645f5fa6cc3fc4c2b5bc9901464963d7ed37f51480b47f4b621ae62c09894ce8171ee9e0c6ce09d3554e32";
+
+        public List<(string, string)> part1Tests = new List<(string, string)>();
+        public List<(string, string)> part2Tests = new List<(string, string)>();
 
         public Day()
         {
@@ -36,6 +39,15 @@ namespace App
 
         protected abstract string Part1Code(string data);
         protected abstract string Part2Code(string data);
+
+        public void AddTestForPart1(string input, string expected) {
+            part1Tests.Add((input, expected));
+        }
+
+        public void AddTestForPart2(string input, string expected)
+        {
+            part2Tests.Add((input, expected));
+        }
 
         private string GetData()
         {
