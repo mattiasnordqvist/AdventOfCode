@@ -4,16 +4,6 @@ namespace App
 {
     public class Day4 : Day
     {
-        public Day4()
-        {
-            AddTestForPart1("111111-111111", "1");
-            AddTestForPart1("223450-223450", "0");
-            AddTestForPart1("123789-123789", "0");
-            AddTestForPart1("200458-200458", "0");
-        }
-
-
-
         ////Gives the next number where each digit is greater or equal to the one before it, unless n already satisfies this rule, then n is returned.
         public static int IfNotIncreasingGetNextIncreasing(int n)
         {
