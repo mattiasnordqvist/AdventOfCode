@@ -35,7 +35,7 @@ namespace App
                 (m1,m2,___) => { /*less than*/ memory[memory[pointer+3]] = value(m1, pointer+1) < value(m2, pointer+2) ? 1 : 0; pointer+=4; },
                 (m1,m2,___) => { /*equal*/ memory[memory[pointer+3]] = value(m1, pointer+1) == value(m2, pointer+2) ? 1 : 0; pointer+=4; },
 
-    };
+            };
             while (memory[pointer] != 99)
             {
                 opcodes[memory[pointer] % 100](memory[pointer] / 100 % 10 == 1, memory[pointer] / 1000 % 10 == 1, memory[pointer] / 10000 % 10 == 1);
@@ -47,7 +47,6 @@ namespace App
             {
                 return immediate ? memory[value] : memory[memory[value]];
             }
-
         }
 
 
