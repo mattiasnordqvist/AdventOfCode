@@ -63,28 +63,30 @@ namespace App
         {
             int? lastOutput = null;
             int pointer = 0;
-            var opcodes = new Action<bool, bool, bool>[]
+            var opcodes = new Action[]
             {
-                (_,__,___) => { /*no-op*/},
-                (m1,m2,_) => { /*add*/ memory[memory[pointer+3]] = value(m1,pointer+1) + value(m2,pointer+2); pointer+=4; },
-                (m1,m2,_) => { /*mul*/memory[memory[pointer+3]] = value(m1,pointer+1) * value(m2,pointer+2); pointer+=4; },
-                (_,__,___) => { /*read */ memory[memory[pointer+1]] = input.Receive(); pointer+=2; },
-                (_,__,___) => { /*write*/ lastOutput = memory[memory[pointer+1]];  output.Post(lastOutput.Value); pointer+=2; },
-                (m1,m2,___) => { /*jump if true*/ pointer = value(m1, pointer+1) == 0 ? pointer+=3 : pointer = value(m2, pointer+2); },
-                (m1,m2,___) => { /*jump if false*/ pointer = value(m1, pointer+1) != 0 ? pointer+=3 : pointer = value(m2, pointer+2); },
-                (m1,m2,___) => { /*less than*/ memory[memory[pointer+3]] = value(m1, pointer+1) < value(m2, pointer+2) ? 1 : 0; pointer+=4; },
-                (m1,m2,___) => { /*equal*/ memory[memory[pointer+3]] = value(m1, pointer+1) == value(m2, pointer+2) ? 1 : 0; pointer+=4; },
+                () => { throw new Exception("no-op"); },
+                () => { /*add*/ memory[memory[pointer+3]] = value(1) + value(2); pointer+=4; },
+                () => { /*mul*/memory[memory[pointer+3]] = value(1) * value(2); pointer+=4; },
+                () => { /*read */ memory[memory[pointer+1]] = input.Receive(); pointer+=2; },
+                () => { /*write*/ lastOutput = memory[memory[pointer+1]];  output.Post(lastOutput.Value); pointer+=2; },
+                () => { /*jump if true*/ pointer = value(1) == 0 ? pointer+=3 : pointer = value(2); },
+                () => { /*jump if false*/ pointer = value(1) != 0 ? pointer+=3 : pointer = value(2); },
+                () => { /*less than*/ memory[memory[pointer+3]] = value(1) < value(2) ? 1 : 0; pointer+=4; },
+                () => { /*equal*/ memory[memory[pointer+3]] = value(1) == value(2) ? 1 : 0; pointer+=4; },
 
             };
             while (memory[pointer] != 99)
             {
-                opcodes[memory[pointer] % 100](memory[pointer] / 100 % 10 == 1, memory[pointer] / 1000 % 10 == 1, memory[pointer] / 10000 % 10 == 1);
+                opcodes[memory[pointer] % 100]();
             }
 
             return lastOutput.Value;
-            int value(bool immediate, int value)
+
+            int value(int paramPos)
             {
-                return immediate ? memory[value] : memory[memory[value]];
+                bool immediate = ((int)(memory[pointer] / Math.Pow(10, 1 + paramPos) % 10)) == 1;
+                return immediate ? memory[pointer+paramPos] : memory[memory[pointer + paramPos]];
             }
 
         }
