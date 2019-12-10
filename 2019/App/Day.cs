@@ -15,7 +15,7 @@ namespace App
             var filename = $"Day{day}.txt";
             if (!File.Exists(filename))
             {
-                File.WriteAllText(filename, GetData());    
+                File.WriteAllText(filename, DownloadData());    
             }
 
             Data = File.ReadAllText(filename);
@@ -25,18 +25,22 @@ namespace App
 
         public string Part1(string data=null)
         {
-            return Part1Code(data ?? Data);
+            return Part1Code(GetData(data));
         }
 
         public string Part2(string data=null)
         {
-            return Part2Code(data ?? Data);
+            return Part2Code(GetData(data));
         }
 
         protected abstract string Part1Code(string data);
         protected abstract string Part2Code(string data);
 
-        private string GetData()
+        protected virtual string GetData(string data = null)
+        {
+            return data ?? Data;
+        }
+        private string DownloadData()
         {
             int day = int.Parse(GetType().Name.Replace("Day", ""));
             var baseAddress = new Uri("https://adventofcode.com/");
