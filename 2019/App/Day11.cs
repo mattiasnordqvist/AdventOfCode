@@ -19,7 +19,8 @@ namespace App
             var input = new BufferBlock<long>();
             input.Post(0);
             var output = new BufferBlock<long>();
-            var process = Task.Run(() => Compute(memory, input, output));
+            var comp = new IntCodeComputer { Input = input, Output = output, Memory = memory };
+            var process = Task.Run(() => comp.Compute());
             var panelsPainted = 0;
             while (true)
             {
@@ -51,44 +52,6 @@ namespace App
             return panelsPainted.ToString();
         }
 
-        public static long? Compute(ScaleUpArray<long> memory, BufferBlock<long> input, BufferBlock<long> output)
-        {
-            long? lastOutput = null;
-            long pointer = 0;
-            long relativeBase = 0;
-            var opcodes = new Action[]
-            {
-                () => { throw new Exception("no-op"); },
-                () => { /*add*/ memory[pos(3)] = value(1) + value(2); pointer+=4; },
-                () => { /*mul*/memory[pos(3)] = value(1) * value(2); pointer+=4; },
-                () => { /*read */ memory[pos(1)] = input.Receive(); pointer+=2; },
-                () => { /*write*/ lastOutput = value(1);  output.Post(lastOutput.Value); pointer+=2; },
-                () => { /*jump if true*/ pointer = value(1) == 0 ? pointer+=3 : pointer = value(2); },
-                () => { /*jump if false*/ pointer = value(1) != 0 ? pointer+=3 : pointer = value(2); },
-                () => { /*less than*/ memory[pos(3)] = value(1) < value(2) ? 1 : 0; pointer+=4; },
-                () => { /*equal*/ memory[pos(3)] = value(1) == value(2) ? 1 : 0; pointer+=4; },
-                () => { /*relative base offset*/ relativeBase += value(1); pointer+=2; },
-
-            };
-            while (memory[pointer] != 99)
-            {
-                opcodes[memory[pointer] % 100]();
-            }
-
-            return lastOutput.Value;
-
-            long pos(long paramPos)
-            {
-                int paramModifier = ((int)(memory[pointer] / Math.Pow(10, 1 + paramPos) % 10));
-                bool position = paramModifier == 0;
-                bool immediate = paramModifier == 1;
-
-                return immediate ? pointer + paramPos : position ? memory[pointer + paramPos] : relativeBase + memory[pointer + paramPos];
-            }
-
-            long value(long paramPos) => memory[pos(paramPos)];
-
-        }
         protected override string Part2Code(string data)
         {
             Dictionary<(int x, int y), int> panels = new Dictionary<(int x, int y), int>();
@@ -100,7 +63,8 @@ namespace App
             var input = new BufferBlock<long>();
             input.Post(1);
             var output = new BufferBlock<long>();
-            var process = Task.Run(() => Compute(memory, input, output));
+            var comp = new IntCodeComputer { Input = input, Output = output, Memory = memory };
+            var process = Task.Run(() => comp.Compute());
             var panelsPainted = 0;
             while (true)
             {
@@ -132,13 +96,12 @@ namespace App
 
             var minx = panels.Min(panel => panel.Key.x);
             var miny = panels.Min(panel => panel.Key.y);
-            Console.Clear();
             foreach (var panel in panels)
             {
                 if (panel.Value == 1)
                 {
                     // prints upside down for some reason :D
-                    Console.SetCursorPosition(panel.Key.x - minx, panel.Key.y - miny);
+                    Console.SetCursorPosition(panel.Key.x - minx, panel.Key.y - miny+5);
                     Console.Write('#');
                 }
 
