@@ -58,11 +58,18 @@ namespace App
 
         protected override string Part2Code(string data)
         {
-            // example should give 2772
+            // example should give 2772, but it doesn't.
+            // I think it is a little strange, looking at the periods of the dimensions of the first moons... 
+            // the z dimensions doesn't enter a repeating pattern until step 3. (looking at my output)
+            // Why is that? Then how can the initial state (step 0) be the first repeating state?
+            // Maybe the z-dimension can enter another repeating pattern, with a longer period, but yielding a smaller common multiple together with the other dimensions?
+
 //            data = @"<x=-1, y=0, z=2>
 //<x=2, y=-10, z=-7>
 //<x=4, y=-8, z=8>
 //<x=3, y=5, z=-1>";
+    
+
 
             // If we look at the moons one by one, and find their repeating periods, we could find the smallest common multiple of those periods.
             // In the same way, for each moon, we can look at the repeating periods for each dimension, and find smallest common mulitple of all the dimensions.
