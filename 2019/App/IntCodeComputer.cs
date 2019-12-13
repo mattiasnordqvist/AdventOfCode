@@ -1,13 +1,19 @@
 ﻿using System;
-using System.Threading.Tasks;
+using System.Linq;
 using System.Threading.Tasks.Dataflow;
 
 namespace App
 {
     public class IntCodeComputer
     {
+
+        public static long[] ParseProgram(string program)
+        {
+            return program.FromCommaSep().Select(long.Parse).ToArray();
+        }
+
         public ScaleUpArray<long> Memory { get; set; }
-        public BufferBlock<long> Input { get; set; }
+        public IIntCodeComputerInput Input { get; set; }
         public BufferBlock<long> Output { get; set; }
         public long? Compute()
         {
@@ -47,5 +53,24 @@ namespace App
             long value(long paramPos) => Memory[pos(paramPos)];
 
         }
+    }
+    public class BufferBlockInput : IIntCodeComputerInput
+    {
+        private BufferBlock<long> block = new BufferBlock<long>();
+
+        public void Post(long what)
+        {
+            block.Post(what);
+        }
+
+        public long Receive()
+        {
+            return block.Receive();
+        }
+    }
+
+    public interface IIntCodeComputerInput
+    {
+        long Receive();
     }
 }

@@ -16,7 +16,7 @@ namespace App
             var robotdir = 0;
             var memory = data.FromCommaSep().Select(long.Parse).ToArray();
 
-            var input = new BufferBlock<long>();
+            var input = new BufferBlockInput();
             input.Post(0);
             var output = new BufferBlock<long>();
             var comp = new IntCodeComputer { Input = input, Output = output, Memory = memory };
@@ -60,7 +60,7 @@ namespace App
             var robotdir = 0;
             var memory = data.FromCommaSep().Select(long.Parse).ToArray();
 
-            var input = new BufferBlock<long>();
+            var input = new BufferBlockInput();
             input.Post(1);
             var output = new BufferBlock<long>();
             var comp = new IntCodeComputer { Input = input, Output = output, Memory = memory };
