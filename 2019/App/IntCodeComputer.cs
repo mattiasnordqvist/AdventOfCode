@@ -1,20 +1,17 @@
 ﻿using System;
 using System.Linq;
-using System.Threading.Tasks.Dataflow;
 
 namespace App
 {
     public class IntCodeComputer
     {
-
         public static long[] ParseProgram(string program)
         {
             return program.FromCommaSep().Select(long.Parse).ToArray();
         }
-
         public ScaleUpArray<long> Memory { get; set; }
-        public IIntCodeComputerInput Input { get; set; }
-        public BufferBlock<long> Output { get; set; }
+        public Func<long> ReadInput { get; set; }
+        public Action<long> WriteOutput { get; set; }
         public long? Compute()
         {
             long? lastOutput = null;
@@ -25,8 +22,8 @@ namespace App
                 () => { throw new Exception("no-op"); },
                 () => { /*add*/ Memory[pos(3)] = value(1) + value(2); pointer+=4; },
                 () => { /*mul*/Memory[pos(3)] = value(1) * value(2); pointer+=4; },
-                () => { /*read */ Memory[pos(1)] = Input.Receive(); pointer+=2; },
-                () => { /*write*/ lastOutput = value(1);  Output.Post(lastOutput.Value); pointer+=2; },
+                () => { /*read */ Memory[pos(1)] = ReadInput(); pointer+=2; },
+                () => { /*write*/ lastOutput = value(1);  WriteOutput(lastOutput.Value); pointer+=2; },
                 () => { /*jump if true*/ pointer = value(1) == 0 ? pointer+=3 : pointer = value(2); },
                 () => { /*jump if false*/ pointer = value(1) != 0 ? pointer+=3 : pointer = value(2); },
                 () => { /*less than*/ Memory[pos(3)] = value(1) < value(2) ? 1 : 0; pointer+=4; },
@@ -53,24 +50,5 @@ namespace App
             long value(long paramPos) => Memory[pos(paramPos)];
 
         }
-    }
-    public class BufferBlockInput : IIntCodeComputerInput
-    {
-        private BufferBlock<long> block = new BufferBlock<long>();
-
-        public void Post(long what)
-        {
-            block.Post(what);
-        }
-
-        public long Receive()
-        {
-            return block.Receive();
-        }
-    }
-
-    public interface IIntCodeComputerInput
-    {
-        long Receive();
     }
 }

@@ -16,10 +16,8 @@ namespace App
             var robotdir = 0;
             var memory = data.FromCommaSep().Select(long.Parse).ToArray();
 
-            var input = new BufferBlockInput();
-            input.Post(0);
-            var output = new BufferBlock<long>();
-            var comp = new IntCodeComputer { Input = input, Output = output, Memory = memory };
+            var comp = new AsyncIntCodeComputer { Memory = memory };
+            comp.Input.Post(0);
             var process = Task.Run(() => comp.Compute());
             var panelsPainted = 0;
             while (true)
@@ -28,8 +26,8 @@ namespace App
                 {
                     panelsPainted++;
                 }
-                panels[robotpos] = (int)output.Receive();
-                var turn = (int)output.Receive();
+                panels[robotpos] = (int)comp.Output.Receive();
+                var turn = (int)comp.Output.Receive();
                 if (turn == 1)
                 {
                     robotdir = (robotdir + 1) % 4;
@@ -47,7 +45,7 @@ namespace App
                 {
                     break;
                 }
-                input.Post(panels.ContainsKey(robotpos) ? panels[robotpos] : 0);
+                comp.Input.Post(panels.ContainsKey(robotpos) ? panels[robotpos] : 0);
             }
             return panelsPainted.ToString();
         }
@@ -60,10 +58,8 @@ namespace App
             var robotdir = 0;
             var memory = data.FromCommaSep().Select(long.Parse).ToArray();
 
-            var input = new BufferBlockInput();
-            input.Post(1);
-            var output = new BufferBlock<long>();
-            var comp = new IntCodeComputer { Input = input, Output = output, Memory = memory };
+            var comp = new AsyncIntCodeComputer { Memory = memory };
+            comp.Input.Post(0);
             var process = Task.Run(() => comp.Compute());
             var panelsPainted = 0;
             while (true)
@@ -72,8 +68,8 @@ namespace App
                 {
                     panelsPainted++;
                 }
-                panels[robotpos] = (int)output.Receive();
-                var turn = (int)output.Receive();
+                panels[robotpos] = (int)comp.Output.Receive();
+                var turn = (int)comp.Output.Receive();
                 if (turn == 1)
                 {
                     robotdir = (robotdir + 1) % 4;
@@ -91,7 +87,7 @@ namespace App
                 {
                     break;
                 }
-                input.Post(panels.ContainsKey(robotpos) ? panels[robotpos] : 0);
+                comp.Input.Post(panels.ContainsKey(robotpos) ? panels[robotpos] : 0);
             }
 
             var minx = panels.Min(panel => panel.Key.x);
