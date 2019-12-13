@@ -59,7 +59,7 @@ namespace App
             var memory = data.FromCommaSep().Select(long.Parse).ToArray();
 
             var comp = new AsyncIntCodeComputer { Memory = memory };
-            comp.Input.Post(0);
+            comp.Input.Post(1);
             var process = Task.Run(() => comp.Compute());
             var panelsPainted = 0;
             while (true)
