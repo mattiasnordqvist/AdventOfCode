@@ -6,73 +6,118 @@ namespace App
 {
     public class Day16 : Day
     {
+        private static int[] input;
+        private static int times;
+
         protected override string Part1Code(string data)
         {
-            
-            var input = data.Trim().Select(x => int.Parse(x + "")).ToArray();
-            int max = input.Length * 1;
-            var output = new int[input.Length * 1];
-            for (int it = 0; it < 100; it++)
+            times = 1;
+            input = data.Trim().Select(x => int.Parse(x + "")).ToArray();
+            for (int i = 0; i < 8; i++)
             {
-                for (int o = 0; o < output.Length; o++)
-                {
-                    output[o] = (int)((Math.Abs(Calc(input, o, max))) % 10L);
-                }
-                input = output;
-            }
-            foreach (var a in output)
-            {
-                Console.Write(a);
+                Console.Write(GetValue(100,i));
                 // 89576828
             }
             return "";
         }
 
+        public static int[] ApplyPhase(int[] input, int inputrepeats)
+        {
+            int max = input.Length * inputrepeats;
+            var output = new int[max];
+            for (int outputPos = 0; outputPos < output.Length; outputPos++)
+            {
+                output[outputPos] = (int)(Math.Abs(Calc(input, outputPos, max)) % 10L);
+            }
+            return output;
+        }
+
         protected override string Part2Code(string data)
         {
             data = "03036732577212944063491565474664";
-            var input = data.Trim().Select(x => int.Parse(x + "")).ToArray();
-            int max = input.Length * 10000;
-            var readFrom = input.Concat(input).ToArray();
             var offset = int.Parse(data.Substring(0, 7));
-            var output = new int[input.Count() * 10000];
-            for (int it = 0; it < 100; it++)
+            times = 10000;
+            input = data.Trim().Select(x => int.Parse(x + "")).ToArray();
+            for (int i = offset; i < offset+8; i++)
             {
-                for (int o = 0; o < output.Length; o++)
-                {
-                    output[o] = (int)((Math.Abs(Calc(readFrom,o, max))) % 10L);
-                }
-                input = output;
-            }
-            for (int a = offset; a < 8; a++)
-            {
-                Console.Write(output[a]);
+                Console.Write(GetValue(100, i));
+                // 89576828
             }
             return "";
         }
 
-        private long Calc(int[] readFrom, int o, int max)
+        public static long GetValue(int phase, int offset)
         {
-            int from = o;
-            int count = o+1;
+            if (!_cache.ContainsKey((phase, offset)))
+            {
+                int from = offset;
+                int count = offset + 1;
+                int max = input.Length * times;
+                long sum = 0;
+                int i = from;
+                int sign = 1;
+                int j = 0;
+                while (i < max)
+                {
+                    if (phase > 1)
+                    {
+                        sum += GetValue(phase - 1, i) * sign;
+                    }
+                    else
+                    {
+                        sum += input[i % input.Length] * sign;
+                    }
+                    j++;
+                    if (j == count)
+                    {
+                        j = 0;
+                        sign *= -1;
+                        i += count + 1;
+                    }
+                    else
+                    {
+                        i++;
+                    }
+                }
+                _cache[(phase, offset)] = Math.Abs(sum)%10L;
+            }
+            return _cache[(phase, offset)];
+        }
+        private static Dictionary<(int, int), long> _cache = new Dictionary<(int, int), long>();
+        public static long Calc(int[] input, int patternRepetitionIndex, int max)
+        {
+            var inputSum = input.Sum();
+            int from = patternRepetitionIndex;
+            int count = patternRepetitionIndex + 1;
             long sum = 0;
             int sign = 1;
             while (true)
             {
-
                 int subSum = 0;
-                for(int i = 0; i < count; i++)
+                int j = from;
+                while (count > input.Length && j + input.Length < count)
                 {
-                    if(from+i >= max) {
-                        sum += (subSum * sign);
+                    subSum += inputSum;
+                    j += input.Length;
+                }
+                for (int i = j; i < from + count; i++)
+                {
+                    if (i >= max)
+                    {
+                        sum += subSum * sign;
                         return sum;
                     }
-                    subSum += readFrom[(from + i)%readFrom.Length];
+
+                    else
+                    {
+                        subSum += input[i % input.Length];
+                    }
                 }
-                sum += (subSum * sign);
+                sum += subSum * sign;
                 sign *= -1;
                 from += count * 2;
             }
+
             throw new Exception("unexpected");
         }
     }
