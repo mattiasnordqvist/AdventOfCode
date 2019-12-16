@@ -107,7 +107,6 @@ namespace App
         {
             var program = IntCodeComputer.ParseProgram(data);
             var computer = new IntCodeComputer() { Memory = program };
-            (int x, int y) lastd = (0, 0);
             (int x, int y) d = (0, 0);
             (int x, int y) nd = (0, 0);
             (int x, int y)? oxygen = null;
