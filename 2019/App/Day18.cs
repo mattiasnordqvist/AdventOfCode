@@ -93,6 +93,7 @@ namespace App
                         {
                             foundKeys[KR[popped.pos]] = (popped.pos.x, popped.pos.y, flood[popped.pos]);
                         }
+                        continue;
                     }
                     var neighBours = GetNeighBours(N, popped.pos, popped.ignore);
                     foreach (var neighbour in neighBours)
@@ -110,9 +111,11 @@ namespace App
 
             public void ProvideKey(char k)
             {
-
-                KR.Remove(K[k]);
-                K.Remove(k);
+                if (K.ContainsKey(k))
+                {
+                    KR.Remove(K[k]);
+                    K.Remove(k);
+                }
                 if (D.ContainsKey(k))
                 {
                     N.Add(D[k]);
@@ -156,19 +159,8 @@ namespace App
                 var neighbours = GetNeighBours(N, fromPos, ignore)
                     .Where(n => !DR.ContainsKey(n))
                     .ToList();
-                //if (neighbours.Count() == 0)
-                //{
-                //    N.Remove(fromPos);
-                //    Thread.Sleep(10);
-                //    Console.SetCursorPosition(fromPos.x, fromPos.y);
-                //    Console.Write('o');
-                //    return false;
-                //}
                 if (neighbours.Count() > 0 && neighbours.All(x => visits.Contains(x)))
                 {
-                    //Thread.Sleep(10);
-                    //Console.SetCursorPosition(fromPos.x, fromPos.y);
-                    //Console.Write('o');
                     return true;
                 }
                 neighbours = neighbours
@@ -183,21 +175,11 @@ namespace App
                     }
                     else
                     {
-                        //Thread.Sleep(10);
-                        //Console.SetCursorPosition(n.x, n.y);
-                        //Console.Write('o');
-                        //if (KR.ContainsKey(fromPos))
-                        //{
-                        //    return true;
-                        //}
                         N.Remove(n);
                     }
                 }
                 return foundSomething;
-
             }
-
-
 
             public Map Clone()
             {
