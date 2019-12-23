@@ -9,21 +9,22 @@ namespace App
 
     public class Day18 : Day
     {
-        static int shortest = int.MaxValue;
-        static Dictionary<int, (int K, (int K, int KS, int DS, int L)[] E)> m;
-        static int allKeys = 0;
+        private static int shortest = int.MaxValue;
+        private static Dictionary<int, (int K, (int K, int KS, int DS, int L)[] E)> m;
+        private static int allKeys = 0;
+        private Dictionary<(int K, int KS), int> _shortestPath = new Dictionary<(int K, int KS), int>();
+
         protected override string Part1Code(string data)
         {
-            (int x, int y) start;
 
             //            data = @"#########
             //#b.A.@.a#
             //#########";
-            data = @"########################
-#f.D.E.e.C.b.A.@.a.B.c.#
-######################.#
-#d.....................#
-########################";
+//            data = @"########################
+//#f.D.E.e.C.b.A.@.a.B.c.#
+//######################.#
+//#d.....................#
+//########################";
             //            data = @"########################
             //#...............b.C.D.f#
             //#.######################
@@ -48,7 +49,7 @@ namespace App
 //###g#h#i################
 //########################";
             var map = Map.Read(data);
-            start = map.Start;
+            var start = map.Start;
             List<Node> nodes = map.K.Select(x => new Node { Key = x.Key }).ToList();
             var paths = new List<Path>();
             foreach (var key in map.K)
@@ -108,13 +109,11 @@ namespace App
 
         }
 
-        static Random r = new Random();
-        private Dictionary<(int K, int KS), int> _shortestPath = new Dictionary<(int K, int KS), int>();
 
-        private void Flood(Map map, int ignoreKey, (int x, int y) position, (int x, int y)? ignore, Path path, List<Path> paths, HashSet<(int x, int y)> visited = null)
+        private void Flood(Map map, int ignoreKey, (int x, int y) position, (int x, int y)? ignore, Path path, List<Path> paths, Dictionary<(int x, int y), int> visited = null)
         {
-            visited = visited ?? new HashSet<(int x, int y)>();
-            visited.Add(position);
+            visited = visited ?? new Dictionary<(int x, int y), int>();
+            visited[position]= path.Length;
             var foundKey = map.KR.ContainsKey(position) ? (map.KR[position] != ignoreKey ? map.KR[position] : 0) : 0;
             var foundDoor = map.DR.ContainsKey(position) ? (map.DR[position] != ignoreKey ? map.DR[position] : 0) : 0;
             path = path.With(foundKey, foundDoor);
@@ -124,9 +123,13 @@ namespace App
             }
             var neighbours = Map.GetNeighBours(map.N, position, ignore);
             path.Length++;
-            foreach (var neighbour in neighbours.Where(x => !visited.Contains(x)))
+            foreach (var neighbour in neighbours)
             {
-                Flood(map, ignoreKey, neighbour, position, path, paths, visited);
+                if ((visited.ContainsKey(neighbour) && visited[neighbour] > path.Length+1) 
+                    || !visited.ContainsKey(neighbour))
+                {
+                    Flood(map, ignoreKey, neighbour, position, path, paths, visited);
+                }
             }
         }
 
