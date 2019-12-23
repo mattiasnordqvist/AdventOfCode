@@ -9,10 +9,27 @@ namespace App
 
     public class Day18 : Day
     {
+        static int shortest = int.MaxValue;
+        static Dictionary<int, (int K, (int K, int KS, int DS, int L)[] E)> m;
+        static int allKeys = 0;
         protected override string Part1Code(string data)
         {
-            (int x, int y) start = (40, 40);
-            //            start = (8, 4);
+            (int x, int y) start;
+
+            //            data = @"#########
+            //#b.A.@.a#
+            //#########";
+            data = @"########################
+#f.D.E.e.C.b.A.@.a.B.c.#
+######################.#
+#d.....................#
+########################";
+            //            data = @"########################
+            //#...............b.C.D.f#
+            //#.######################
+            //#.....@.a.B.c.d.A.e.F.g#
+            //########################";
+
             //            data = @"#################
             //#i.G..c...e..H.p#
             //########.########
@@ -23,11 +40,15 @@ namespace App
             //#l.F..d...h..C.m#
             //#################";
 
-            //            start = (5, 1);
-            //            data = @"#########
-            //#bCAc@.a#
-            //#########";
+
+//            data = @"########################
+//#@..............ac.GI.b#
+//###d#e#f################
+//###A#B#C################
+//###g#h#i################
+//########################";
             var map = Map.Read(data);
+            start = map.Start;
             List<Node> nodes = map.K.Select(x => new Node { Key = x.Key }).ToList();
             var paths = new List<Path>();
             foreach (var key in map.K)
@@ -43,56 +64,52 @@ namespace App
             startNode.Edges = paths.Select(x => (nodes.Single(n => n.Key == x.LastKey), x)).ToList();
             nodes.Add(startNode);
 
-            var stack = new Stack<Progress>();
-            stack.Push(new Progress(startNode));
-            int shortest = int.MaxValue;
-            while (stack.Count > 0)
-            {
-                Progress popped;
-                List<(Node, Path)> availableEdges;
-                popped = stack.Pop();
-                if (popped.Steps >= shortest)
-                {
-                    continue;
-                }
-                if (!_cache.ContainsKey((popped.CurrentNode.Key, popped.Keys)))
-                {
-                    _cache[(popped.CurrentNode.Key, popped.Keys)] = popped.CurrentNode.Edges
-                        .Where(x => (popped.Keys | x.Item1.Key) > popped.Keys)
-                        .Where(x => (x.Item2.Doors & popped.Keys) == x.Item2.Doors)
-                        .Where(x => x.Item1 != startNode)
-                        .ToList();
-                }
-
-                availableEdges = _cache[(popped.CurrentNode.Key, popped.Keys)];
-
-                foreach (var edge in availableEdges)
-                {
-                    var newProgress = popped.Walk(edge);
-                    if (newProgress.Steps >= shortest)
-                    {
-                        continue;
-                    }
-                    if (newProgress.Keys == map.KeySum)
-                    {
-                        if (newProgress.Steps < shortest)
-                        {
-                            shortest = newProgress.Steps;
-                            Console.WriteLine(shortest + ": ");
-                            //Console.WriteLine(newProgress.Breadcrumbs.Distinct().Aggregate("", (a, b) => a + " -> " + b));
-                        }
-                        continue;
-                    }
-                    else
-                    {
-                        stack.Push(newProgress);
-                    }
-                }
-            }
+            m = nodes.Select(x => (K: x.Key, E: x.Edges.Select(e => ( K: e.Item1.Key, KS: e.Item2.Keys, DS: e.Item2.Doors, L: e.Item2.Length )).ToArray())).ToArray().ToDictionary(x => x.K, x=> x);
+            allKeys = nodes.Aggregate(0, (a, b) => a | b.Key);
+            Examine((0, 0), 0);
             return "";
         }
+
+        private void Examine((int K, int KS) N, int L)
+        {
+            if (L < shortest && N.KS == allKeys)
+            {
+                shortest = L;
+                Console.WriteLine(shortest);
+                return;
+            }
+
+            if (_shortestPath.ContainsKey(N))
+            {
+                if(L < _shortestPath[N])
+                {
+                    _shortestPath[N] = L;
+                }
+                else
+                {
+                    return;
+                }
+            }
+            else
+            {
+                _shortestPath[N] = L;
+            }
+
+            var traversableEdges = m[N.K].E
+                .Where(x => (N.KS | x.K) > N.KS)
+                .Where(x => (x.DS & N.KS) == x.DS)
+                .Where(x => x.K != 0)
+                .ToList();
+
+            foreach (var edge in traversableEdges)
+            {
+                Examine((edge.K, N.KS | edge.KS), L + edge.L);
+            }
+
+        }
+
         static Random r = new Random();
-        private Dictionary<(int, int), List<(Node, Path)>> _cache = new Dictionary<(int, int), List<(Node, Path)>>();
+        private Dictionary<(int K, int KS), int> _shortestPath = new Dictionary<(int K, int KS), int>();
 
         private void Flood(Map map, int ignoreKey, (int x, int y) position, (int x, int y)? ignore, Path path, List<Path> paths, HashSet<(int x, int y)> visited = null)
         {
@@ -134,9 +151,7 @@ namespace App
             public int Doors { get; private set; } = 0;
             public int Keys { get; private set; } = 0;
             public int LastKey { get; private set; }
-            //public List<char> Breadcrumb { get; private set; } = new List<char>();
-
-            //public int KeyCount { get; private set; }
+            
             public int Length = 0;
             public Path With(int key = 0, int door = 0)
             {
@@ -185,6 +200,7 @@ namespace App
             public Dictionary<(int x, int y), int> DR = new Dictionary<(int x, int y), int>();
 
             public int KeySum { get; private set; }
+            public (int x, int y) Start { get; private set; }
 
             public void Print()
             {
@@ -242,6 +258,10 @@ namespace App
                         if (c == '.' || c == '@')
                         {
                             map.N.Add((x, y));
+                            if(c == '@')
+                            {
+                                map.Start = ((x, y));
+                            }
                         }
                         if (char.IsLetter(c))
                         {
@@ -270,40 +290,13 @@ namespace App
             }
         }
 
-        private class Progress : Priority_Queue.FastPriorityQueueNode
+
+
+        static int NumberOfSetBits(int i)
         {
-            public Progress(Node current)
-            {
-                CurrentNode = current;
-                //Breadcrumbs = new List<char> { '@' };
-            }
-
-            private Progress() { }
-            //public List<char> Breadcrumbs { get; set; }
-            public Node CurrentNode { get; internal set; }
-            public int Steps { get; internal set; } = 0;
-            public int Keys { get; internal set; } = 0;
-            public bool Failed { get; internal set; } = false;
-
-            //public int KeyCount { get; private set; } = 0;
-
-            internal Progress Walk((Node node, Path path) edge)
-            {
-                var newProgress = new Progress();
-                newProgress.Steps = Steps + edge.path.Length;
-                newProgress.CurrentNode = edge.node;
-                newProgress.Keys = Keys | edge.path.Keys;
-                //newProgress.Breadcrumbs = Breadcrumbs.ToList().Concat(edge.path.Breadcrumb).ToList();
-                //newProgress.KeyCount = NumberOfSetBits(newProgress.Keys);
-                return newProgress;
-            }
-
-            int NumberOfSetBits(int i)
-            {
-                i = i - ((i >> 1) & 0x55555555);
-                i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
-                return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
-            }
+            i = i - ((i >> 1) & 0x55555555);
+            i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
+            return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
         }
     }
 }
