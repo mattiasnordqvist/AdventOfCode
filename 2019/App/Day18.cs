@@ -2,66 +2,173 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace App
 {
+
     public class Day18 : Day
     {
         protected override string Part1Code(string data)
         {
             (int x, int y) start = (40, 40);
-//            start = (1, 1);
-//            data = @"########################
-//#@..............ac.GI.b#
-//###d#e#f################
-//###A#B#C################
-//###g#h#i################
-//########################";
+            //            start = (8, 4);
+            //            data = @"#################
+            //#i.G..c...e..H.p#
+            //########.########
+            //#j.A..b...f..D.o#
+            //########@########
+            //#k.E..a...g..B.n#
+            //########.########
+            //#l.F..d...h..C.m#
+            //#################";
+
+            //            start = (5, 1);
+            //            data = @"#########
+            //#bCAc@.a#
+            //#########";
             var map = Map.Read(data);
-            var originalMap = map.Clone();
-            map.Reduce(start);
-            var stack = new Stack<(Map map, (int x, int y) pos, int l, HashSet<char> keys)>();
-            stack.Push((map, (start.x, start.y), 0, new HashSet<char>()));
+            List<Node> nodes = map.K.Select(x => new Node { Key = x.Key }).ToList();
+            var paths = new List<Path>();
+            foreach (var key in map.K)
+            {
+                paths = new List<Path>();
+                Flood(map, key.Key, key.Value, null, new Path(), paths);
+                nodes.Single(x => x.Key == key.Key).Edges = paths.Select(x => (nodes.Single(n => n.Key == x.LastKey), path: x)).ToList();
+            }
+
+            paths = new List<Path>();
+            Flood(map, 0, start, null, new Path(), paths);
+            var startNode = new Node();
+            startNode.Edges = paths.Select(x => (nodes.Single(n => n.Key == x.LastKey), x)).ToList();
+            nodes.Add(startNode);
+
+            var stack = new Stack<Progress>();
+            stack.Push(new Progress(startNode));
             int shortest = int.MaxValue;
             while (stack.Count > 0)
             {
-                var popped = stack.Pop();
-                if (popped.l >= shortest)
+                Progress popped;
+                List<(Node, Path)> availableEdges;
+                popped = stack.Pop();
+                if (popped.Steps >= shortest)
                 {
                     continue;
                 }
-                var m = popped.map;
-                foreach(var k in popped.keys)
+                if (!_cache.ContainsKey((popped.CurrentNode.Key, popped.Keys)))
                 {
-                    m.ProvideKey(k);
+                    _cache[(popped.CurrentNode.Key, popped.Keys)] = popped.CurrentNode.Edges
+                        .Where(x => (popped.Keys | x.Item1.Key) > popped.Keys)
+                        .Where(x => (x.Item2.Doors & popped.Keys) == x.Item2.Doors)
+                        .Where(x => x.Item1 != startNode)
+                        .ToList();
                 }
-                var foundKeys = m.Flood(popped.pos);
-                if (foundKeys.Count == 0)
+
+                availableEdges = _cache[(popped.CurrentNode.Key, popped.Keys)];
+
+                foreach (var edge in availableEdges)
                 {
-                    if (popped.l < shortest)
+                    var newProgress = popped.Walk(edge);
+                    if (newProgress.Steps >= shortest)
                     {
-                        shortest = popped.l;
-                        Console.WriteLine(shortest);
+                        continue;
                     }
-                }
-                else
-                {
-                    foreach (var keyFound in foundKeys)
+                    if (newProgress.Keys == map.KeySum)
                     {
-                        if (keyFound.Value.l + popped.l >= shortest)
+                        if (newProgress.Steps < shortest)
                         {
-                            continue;
+                            shortest = newProgress.Steps;
+                            Console.WriteLine(shortest + ": ");
+                            //Console.WriteLine(newProgress.Breadcrumbs.Distinct().Aggregate("", (a, b) => a + " -> " + b));
                         }
-                        var newMap = map.Clone();
-                        newMap.ProvideKey(keyFound.Key);
-                        newMap.Reduce((keyFound.Value.x, keyFound.Value.y));
-                        var keys = new HashSet<char>(popped.keys);
-                        keys.Add(keyFound.Key);
-                        stack.Push((originalMap.Clone(), (keyFound.Value.x, keyFound.Value.y), keyFound.Value.l + popped.l, keys));
+                        continue;
+                    }
+                    else
+                    {
+                        stack.Push(newProgress);
                     }
                 }
             }
-            return shortest.ToString();
+            return "";
+        }
+        static Random r = new Random();
+        private Dictionary<(int, int), List<(Node, Path)>> _cache = new Dictionary<(int, int), List<(Node, Path)>>();
+
+        private void Flood(Map map, int ignoreKey, (int x, int y) position, (int x, int y)? ignore, Path path, List<Path> paths, HashSet<(int x, int y)> visited = null)
+        {
+            visited = visited ?? new HashSet<(int x, int y)>();
+            visited.Add(position);
+            var foundKey = map.KR.ContainsKey(position) ? (map.KR[position] != ignoreKey ? map.KR[position] : 0) : 0;
+            var foundDoor = map.DR.ContainsKey(position) ? (map.DR[position] != ignoreKey ? map.DR[position] : 0) : 0;
+            path = path.With(foundKey, foundDoor);
+            if (foundKey != 0)
+            {
+                paths.Add(path.With());
+            }
+            var neighbours = Map.GetNeighBours(map.N, position, ignore);
+            path.Length++;
+            foreach (var neighbour in neighbours.Where(x => !visited.Contains(x)))
+            {
+                Flood(map, ignoreKey, neighbour, position, path, paths, visited);
+            }
+        }
+
+        public class Node
+        {
+            public int Key { get; set; }
+            public List<(Node, Path)> Edges { get; set; }
+
+            public override bool Equals(object obj)
+            {
+                return obj is Node ? Key.Equals(((Node)obj).Key) : base.Equals(obj);
+            }
+
+            public override int GetHashCode()
+            {
+                return HashCode.Combine(Key);
+            }
+        }
+
+        public class Path
+        {
+            public int Doors { get; private set; } = 0;
+            public int Keys { get; private set; } = 0;
+            public int LastKey { get; private set; }
+            //public List<char> Breadcrumb { get; private set; } = new List<char>();
+
+            //public int KeyCount { get; private set; }
+            public int Length = 0;
+            public Path With(int key = 0, int door = 0)
+            {
+                //int c = 0;
+
+                //if (key != 0)
+                //{
+                //    var a = key;
+                //    while (true)
+                //    {
+                //        if (a == 1)
+                //        {
+                //            break;
+                //        }
+                //        else
+                //        {
+                //            c++;
+                //            a = a >> 1;
+                //        }
+
+                //    }
+                //}
+                return new Path
+                {
+                    Length = Length,
+                    Doors = Doors | door,
+                    Keys = Keys | key,
+                    LastKey = key == 0 ? LastKey : key,
+                    //KeyCount = KeyCount + (key == 0 ? 1 : 0),
+                    //Breadcrumb = key == 0 ? Breadcrumb.ToList() : Breadcrumb.Append((char)(c + 97)).ToList(),
+                };
+            }
         }
 
         protected override string Part2Code(string data)
@@ -72,65 +179,12 @@ namespace App
         public class Map
         {
             public HashSet<(int x, int y)> N = new HashSet<(int, int)>();
-            public Dictionary<char, (int x, int y)> K = new Dictionary<char, (int x, int y)>();
-            public Dictionary<char, (int x, int y)> D = new Dictionary<char, (int x, int y)>();
-            public Dictionary<(int x, int y), char> KR = new Dictionary<(int x, int y), char>();
-            public Dictionary<(int x, int y), char> DR = new Dictionary<(int x, int y), char>();
+            public Dictionary<int, (int x, int y)> K = new Dictionary<int, (int x, int y)>();
+            public Dictionary<int, (int x, int y)> D = new Dictionary<int, (int x, int y)>();
+            public Dictionary<(int x, int y), int> KR = new Dictionary<(int x, int y), int>();
+            public Dictionary<(int x, int y), int> DR = new Dictionary<(int x, int y), int>();
 
-            public Dictionary<char, (int x, int y, int l)> Flood((int x, int y) pos)
-            {
-                var flood = new Dictionary<(int x, int y), int>();
-                var foundKeys = new Dictionary<char, (int x, int y, int l)>();
-                Stack<((int x, int y) pos, (int x, int y)? ignore)> stack = new Stack<((int x, int y) pos, (int x, int y)? ignore)>();
-                flood[pos] = 0;
-                stack.Push((pos, null));
-                while (stack.Count > 0)
-                {
-                    var popped = stack.Pop();
-                    if (KR.ContainsKey(popped.pos))
-                    {
-                        if (!foundKeys.ContainsKey(KR[popped.pos]) || foundKeys[KR[popped.pos]].l > flood[popped.pos])
-                        {
-                            foundKeys[KR[popped.pos]] = (popped.pos.x, popped.pos.y, flood[popped.pos]);
-                        }
-                        continue;
-                    }
-                    var neighBours = GetNeighBours(N, popped.pos, popped.ignore);
-                    foreach (var neighbour in neighBours)
-                    {
-
-                        if (!flood.ContainsKey(neighbour) || flood[popped.pos] + 1 < flood[neighbour])
-                        {
-                            flood[neighbour] = flood[popped.pos] + 1;
-                            stack.Push((neighbour, popped.pos));
-                        }
-                    }
-                }
-                return foundKeys;
-            }
-
-            public void ProvideKey(char k)
-            {
-                if (K.ContainsKey(k))
-                {
-                    KR.Remove(K[k]);
-                    K.Remove(k);
-                }
-                if (D.ContainsKey(k))
-                {
-                    N.Add(D[k]);
-                    DR.Remove(D[k]);
-                    D.Remove(k);
-                }
-
-            }
-
-            public HashSet<(int x, int y)> Reduce((int x, int y) fromPos)
-            {
-                var visits = new HashSet<(int x, int y)>() { (fromPos.x, fromPos.y) };
-                Reduce(fromPos, null, visits);
-                return visits;
-            }
+            public int KeySum { get; private set; }
 
             public void Print()
             {
@@ -143,7 +197,7 @@ namespace App
                 foreach (var k in K)
                 {
                     Console.SetCursorPosition(k.Value.x, k.Value.y);
-                    Console.Write(char.ToLower(k.Key));
+                    Console.Write(k.Key);
                 }
                 foreach (var d in D)
                 {
@@ -151,46 +205,6 @@ namespace App
                     Console.Write(d.Key);
                 }
 
-            }
-
-            private bool Reduce((int x, int y) fromPos, (int x, int y)? ignore, HashSet<(int x, int y)> visits)
-            {
-                visits.Add(fromPos);
-                var neighbours = GetNeighBours(N, fromPos, ignore)
-                    .Where(n => !DR.ContainsKey(n))
-                    .ToList();
-                if (neighbours.Count() > 0 && neighbours.All(x => visits.Contains(x)))
-                {
-                    return true;
-                }
-                neighbours = neighbours
-                    .Where(x => !visits.Contains(x))
-                    .ToList();
-                var foundSomething = KR.ContainsKey(fromPos);
-                foreach (var n in neighbours)
-                {
-                    if (Reduce(n, fromPos, visits))
-                    {
-                        foundSomething = true;
-                    }
-                    else
-                    {
-                        N.Remove(n);
-                    }
-                }
-                return foundSomething;
-            }
-
-            public Map Clone()
-            {
-                return new Map
-                {
-                    N = N.ToHashSet(),
-                    K = K.ToDictionary(x => x.Key, x => x.Value),
-                    D = D.ToDictionary(x => x.Key, x => x.Value),
-                    KR = KR.ToDictionary(x => x.Key, x => x.Value),
-                    DR = DR.ToDictionary(x => x.Key, x => x.Value),
-                };
             }
 
             public static IEnumerable<(int x, int y)> GetNeighBours(HashSet<(int x, int y)> n, (int x, int y) p, (int x, int y)? i)
@@ -213,7 +227,6 @@ namespace App
                     if (i != u && n.Contains(u)) yield return u;
                     if (i != d && n.Contains(d)) yield return d;
                 }
-
             }
 
             public static Map Read(string data)
@@ -221,6 +234,7 @@ namespace App
                 Map map = new Map();
                 int x = 0;
                 int y = 0;
+                int keySum = 0;
                 foreach (var line in data.Lines())
                 {
                     foreach (var c in line)
@@ -231,16 +245,19 @@ namespace App
                         }
                         if (char.IsLetter(c))
                         {
+                            map.N.Add((x, y));
                             if (char.IsUpper(c))
                             {
-                                map.D[c] = (x, y);
-                                map.DR[(x, y)] = c;
+                                int door = 1 << (c - 65);
+                                map.D[door] = (x, y);
+                                map.DR[(x, y)] = door;
                             }
                             if (char.IsLower(c))
                             {
-                                map.N.Add((x, y));
-                                map.K[char.ToUpper(c)] = (x, y);
-                                map.KR[(x, y)] = char.ToUpper(c);
+                                int key = 1 << (c - 97);
+                                keySum += key;
+                                map.K[key] = (x, y);
+                                map.KR[(x, y)] = key;
                             }
                         }
                         x++;
@@ -248,7 +265,44 @@ namespace App
                     y++;
                     x = 0;
                 }
+                map.KeySum = keySum;
                 return map;
+            }
+        }
+
+        private class Progress : Priority_Queue.FastPriorityQueueNode
+        {
+            public Progress(Node current)
+            {
+                CurrentNode = current;
+                //Breadcrumbs = new List<char> { '@' };
+            }
+
+            private Progress() { }
+            //public List<char> Breadcrumbs { get; set; }
+            public Node CurrentNode { get; internal set; }
+            public int Steps { get; internal set; } = 0;
+            public int Keys { get; internal set; } = 0;
+            public bool Failed { get; internal set; } = false;
+
+            //public int KeyCount { get; private set; } = 0;
+
+            internal Progress Walk((Node node, Path path) edge)
+            {
+                var newProgress = new Progress();
+                newProgress.Steps = Steps + edge.path.Length;
+                newProgress.CurrentNode = edge.node;
+                newProgress.Keys = Keys | edge.path.Keys;
+                //newProgress.Breadcrumbs = Breadcrumbs.ToList().Concat(edge.path.Breadcrumb).ToList();
+                //newProgress.KeyCount = NumberOfSetBits(newProgress.Keys);
+                return newProgress;
+            }
+
+            int NumberOfSetBits(int i)
+            {
+                i = i - ((i >> 1) & 0x55555555);
+                i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
+                return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
             }
         }
     }
