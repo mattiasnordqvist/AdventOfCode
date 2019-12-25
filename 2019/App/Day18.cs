@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace App
 {
@@ -14,17 +12,21 @@ namespace App
         private static int allKeys = 0;
         private Dictionary<(int K, int KS), int> _shortestPath = new Dictionary<(int K, int KS), int>();
 
+        private static int shortest2 = int.MaxValue;
+        private static Dictionary<(int K, int Q), (int K, int Q, (int K, int KS, int DS, int L)[] E)> m2;
+        private Dictionary<(int K1, int K2, int K3, int K4, int KS), int> _shortestPath2 = new Dictionary<(int K1, int K2, int K3, int K4, int KS), int>();
+
         protected override string Part1Code(string data)
         {
 
             //            data = @"#########
             //#b.A.@.a#
             //#########";
-//            data = @"########################
-//#f.D.E.e.C.b.A.@.a.B.c.#
-//######################.#
-//#d.....................#
-//########################";
+            //            data = @"########################
+            //#f.D.E.e.C.b.A.@.a.B.c.#
+            //######################.#
+            //#d.....................#
+            //########################";
             //            data = @"########################
             //#...............b.C.D.f#
             //#.######################
@@ -42,12 +44,12 @@ namespace App
             //#################";
 
 
-//            data = @"########################
-//#@..............ac.GI.b#
-//###d#e#f################
-//###A#B#C################
-//###g#h#i################
-//########################";
+            //            data = @"########################
+            //#@..............ac.GI.b#
+            //###d#e#f################
+            //###A#B#C################
+            //###g#h#i################
+            //########################";
             var map = Map.Read(data);
             var start = map.Start;
             List<Node> nodes = map.K.Select(x => new Node { Key = x.Key }).ToList();
@@ -65,7 +67,7 @@ namespace App
             startNode.Edges = paths.Select(x => (nodes.Single(n => n.Key == x.LastKey), x)).ToList();
             nodes.Add(startNode);
 
-            m = nodes.Select(x => (K: x.Key, E: x.Edges.Select(e => ( K: e.Item1.Key, KS: e.Item2.Keys, DS: e.Item2.Doors, L: e.Item2.Length )).ToArray())).ToArray().ToDictionary(x => x.K, x=> x);
+            m = nodes.Select(x => (K: x.Key, E: x.Edges.Select(e => (K: e.Item1.Key, KS: e.Item2.Keys, DS: e.Item2.Doors, L: e.Item2.Length)).ToArray())).ToArray().ToDictionary(x => x.K, x => x);
             allKeys = nodes.Aggregate(0, (a, b) => a | b.Key);
             Examine((0, 0), 0);
             return "";
@@ -82,7 +84,7 @@ namespace App
 
             if (_shortestPath.ContainsKey(N))
             {
-                if(L < _shortestPath[N])
+                if (L < _shortestPath[N])
                 {
                     _shortestPath[N] = L;
                 }
@@ -108,12 +110,10 @@ namespace App
             }
 
         }
-
-
         private void Flood(Map map, int ignoreKey, (int x, int y) position, (int x, int y)? ignore, Path path, List<Path> paths, Dictionary<(int x, int y), int> visited = null)
         {
             visited = visited ?? new Dictionary<(int x, int y), int>();
-            visited[position]= path.Length;
+            visited[position] = path.Length;
             var foundKey = map.KR.ContainsKey(position) ? (map.KR[position] != ignoreKey ? map.KR[position] : 0) : 0;
             var foundDoor = map.DR.ContainsKey(position) ? (map.DR[position] != ignoreKey ? map.DR[position] : 0) : 0;
             path = path.With(foundKey, foundDoor);
@@ -125,73 +125,153 @@ namespace App
             path.Length++;
             foreach (var neighbour in neighbours)
             {
-                if ((visited.ContainsKey(neighbour) && visited[neighbour] > path.Length+1) 
+                if ((visited.ContainsKey(neighbour) && visited[neighbour] > path.Length + 1)
                     || !visited.ContainsKey(neighbour))
                 {
                     Flood(map, ignoreKey, neighbour, position, path, paths, visited);
                 }
             }
         }
-
         public class Node
         {
             public int Key { get; set; }
             public List<(Node, Path)> Edges { get; set; }
+            public int StartNodeId { get; set; } = 0;
 
             public override bool Equals(object obj)
             {
-                return obj is Node ? Key.Equals(((Node)obj).Key) : base.Equals(obj);
+                return obj is Node 
+                    ? Key.Equals(((Node)obj).Key) && StartNodeId.Equals(((Node)obj).StartNodeId)
+                    : base.Equals(obj);
             }
 
             public override int GetHashCode()
             {
-                return HashCode.Combine(Key);
+                return HashCode.Combine(Key, StartNodeId);
             }
         }
-
         public class Path
         {
             public int Doors { get; private set; } = 0;
             public int Keys { get; private set; } = 0;
             public int LastKey { get; private set; }
-            
+
             public int Length = 0;
-            public Path With(int key = 0, int door = 0)
+            public Path With(int key = 0, int door = 0) => new Path
             {
-                //int c = 0;
+                Length = Length,
+                Doors = Doors | door,
+                Keys = Keys | key,
+                LastKey = key == 0 ? LastKey : key,
+            };
+        }
+        protected override string Part2Code(string data)
+        {
+            var map = Map.Read(data);
+            map.N.Remove(map.Start);
+            map.N.Remove((map.Start.x + 1, map.Start.y));
+            map.N.Remove((map.Start.x - 1, map.Start.y));
+            map.N.Remove((map.Start.x, map.Start.y + 1));
+            map.N.Remove((map.Start.x, map.Start.y - 1));
+            var starts = new (int x, int y)[] {
+                (map.Start.x-1, map.Start.y-1),
+                (map.Start.x-1, map.Start.y+1),
+                (map.Start.x+1, map.Start.y-1),
+                (map.Start.x+1, map.Start.y+1)
+            };
 
-                //if (key != 0)
-                //{
-                //    var a = key;
-                //    while (true)
-                //    {
-                //        if (a == 1)
-                //        {
-                //            break;
-                //        }
-                //        else
-                //        {
-                //            c++;
-                //            a = a >> 1;
-                //        }
+            List<Node> nodes = map.K.Select(x => new Node { Key = x.Key }).ToList();
+            var paths = new List<Path>();
+            foreach (var key in map.K)
+            {
+                paths = new List<Path>();
+                Flood(map, key.Key, key.Value, null, new Path(), paths);
+                nodes.Single(x => x.Key == key.Key).Edges = paths.Select(x => (nodes.Single(n => n.Key == x.LastKey), path: x)).ToList();
+            }
 
-                //    }
-                //}
-                return new Path
+            List<Node> startNodes = new List<Node>();
+            int i = 1;
+            foreach (var start in starts)
+            {
+                paths = new List<Path>();
+                Flood(map, 0, start, null, new Path(), paths);
+                var startNode = new Node();
+                startNode.Edges = paths.Select(x => (nodes.Single(n => n.Key == x.LastKey), path: x)).ToList();
+                startNodes.Add(startNode);
+                nodes.Add(startNode);
+                startNode.StartNodeId = i;
+                i++;
+            }
+
+
+            foreach(var sn in startNodes)
+            {
+                Setup(sn, sn.StartNodeId);
+            }
+
+            m2 = nodes.Select(x => (K: x.Key, Q: x.StartNodeId, E: x.Edges.Select(e => (K: e.Item1.Key, KS: e.Item2.Keys, DS: e.Item2.Doors, L: e.Item2.Length)).ToArray())).ToArray().ToDictionary(x => (x.K, x.Q), x => x);
+            allKeys = nodes.Aggregate(0, (a, b) => a | b.Key);
+            Examine2((0, 0, 0, 0, 0), 0);
+            return "";
+        }
+
+        private void Setup(Node sn, int snid)
+        {
+            foreach(var e in sn.Edges)
+            {
+                if(e.Item1.StartNodeId == 0)
                 {
-                    Length = Length,
-                    Doors = Doors | door,
-                    Keys = Keys | key,
-                    LastKey = key == 0 ? LastKey : key,
-                    //KeyCount = KeyCount + (key == 0 ? 1 : 0),
-                    //Breadcrumb = key == 0 ? Breadcrumb.ToList() : Breadcrumb.Append((char)(c + 97)).ToList(),
-                };
+                    e.Item1.StartNodeId = snid;
+                    Setup(e.Item1, snid);
+                }
             }
         }
 
-        protected override string Part2Code(string data)
+        private void Examine2((int K1, int K2, int K3, int K4, int KS) RS, int L)
         {
-            return "";
+            if (L < shortest2 && RS.KS == allKeys)
+            {
+                shortest2 = L;
+                Console.WriteLine(shortest2);
+                return;
+            }
+
+            if (_shortestPath2.ContainsKey(RS))
+            {
+                if (L < _shortestPath2[RS])
+                {
+                    _shortestPath2[RS] = L;
+                }
+                else
+                {
+                    return;
+                }
+            }
+            else
+            {
+                _shortestPath2[RS] = L;
+            }
+
+            var traversableEdges =
+                m2[(RS.K1, 1)].E.Select(x => (E: x, Q: 1))
+                .Union(m2[(RS.K2, 2)].E.Select(x => (E: x, Q: 2)))
+                .Union(m2[(RS.K3, 3)].E.Select(x => (E: x, Q: 3)))
+                .Union(m2[(RS.K4, 4)].E.Select(x => (E: x, Q: 4)))
+                .Where(x => (RS.KS | x.E.K) > RS.KS)
+                .Where(x => (x.E.DS & RS.KS) == x.E.DS)
+                .Where(x => x.E.K != 0)
+                .ToList();
+
+            foreach (var edge in traversableEdges)
+            {
+                int K1 = edge.Q == 1 ? edge.E.K : RS.K1;
+                int K2 = edge.Q == 2 ? edge.E.K : RS.K2;
+                int K3 = edge.Q == 3 ? edge.E.K : RS.K3;
+                int K4 = edge.Q == 4 ? edge.E.K : RS.K4;
+                
+                Examine2((K1, K2, K3, K4, RS.KS | edge.E.KS), L + edge.E.L);
+            }
+
         }
 
         public class Map
@@ -204,27 +284,6 @@ namespace App
 
             public int KeySum { get; private set; }
             public (int x, int y) Start { get; private set; }
-
-            public void Print()
-            {
-                Console.Clear();
-                foreach (var n in N)
-                {
-                    Console.SetCursorPosition(n.x, n.y);
-                    Console.Write('.');
-                }
-                foreach (var k in K)
-                {
-                    Console.SetCursorPosition(k.Value.x, k.Value.y);
-                    Console.Write(k.Key);
-                }
-                foreach (var d in D)
-                {
-                    Console.SetCursorPosition(d.Value.x, d.Value.y);
-                    Console.Write(d.Key);
-                }
-
-            }
 
             public static IEnumerable<(int x, int y)> GetNeighBours(HashSet<(int x, int y)> n, (int x, int y) p, (int x, int y)? i)
             {
@@ -261,7 +320,7 @@ namespace App
                         if (c == '.' || c == '@')
                         {
                             map.N.Add((x, y));
-                            if(c == '@')
+                            if (c == '@')
                             {
                                 map.Start = ((x, y));
                             }
@@ -291,15 +350,6 @@ namespace App
                 map.KeySum = keySum;
                 return map;
             }
-        }
-
-
-
-        static int NumberOfSetBits(int i)
-        {
-            i = i - ((i >> 1) & 0x55555555);
-            i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
-            return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
         }
     }
 }
