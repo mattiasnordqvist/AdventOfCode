@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 
 namespace App
 {
@@ -20,7 +18,10 @@ namespace App
                     {
                         Memory = IntCodeComputer.ParseProgram(data),
                         ReadInput = () => queue.Dequeue(),
-                        WriteOutput = (o) => size += (int)o
+                        WriteOutput = (o) =>
+                        {
+                            size += (int)o;
+                        }
                     };
                     computer.Compute();
                 }
@@ -28,11 +29,63 @@ namespace App
             return size.ToString();
         }
 
-        
+
 
         protected override string Part2Code(string data)
         {
-            return "";
+            int lastX = 0;
+            int y = 10; // tractor beam looks strange in beginning. Just skip forward a bit.
+            int x = lastX;
+            L1: while (true)
+            {
+                if (!Check(data, x, y))
+                {
+                    x++;
+                }
+                else
+                {
+                    lastX = x;
+                    L2: while (true)
+                    {
+                        if (Check(data, x + 99, y))
+                        {
+                            if (Check(data, x, y + 99))
+                            {
+                                return ((x * 10000) + y).ToString();
+                            }
+                            else
+                            {
+                                x++;
+                                goto L2;
+                            }
+                        }
+                        else
+                        {
+                            y++;
+                            x = lastX;
+                            goto L1;
+                        }
+                    }
+                }
+            }
+        }
+
+        private static bool Check(string data, int x, int y)
+        {
+            var queue = new Queue<int>();
+            queue.Enqueue(x);
+            queue.Enqueue(y);
+            var computer = new IntCodeComputer()
+            {
+                Memory = IntCodeComputer.ParseProgram(data),
+                ReadInput = () => queue.Dequeue(),
+                WriteOutput = (o) =>
+                {
+                    //output = (int)o;
+                }
+            };
+
+            return computer.Compute() == 1;
         }
     }
 }
