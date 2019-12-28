@@ -8,119 +8,74 @@ namespace NUnitTestProject1
         [Test]
         public void Test1()
         {
-            Assert.AreEqual(0, Day22.SlowInc(0, 1, 10));
-            Assert.AreEqual(1, Day22.SlowInc(1, 1, 10));
-            Assert.AreEqual(2, Day22.SlowInc(2, 1, 10));
-            Assert.AreEqual(3, Day22.SlowInc(3, 1, 10));
-            Assert.AreEqual(4, Day22.SlowInc(4, 1, 10));
-            Assert.AreEqual(5, Day22.SlowInc(5, 1, 10));
-            Assert.AreEqual(6, Day22.SlowInc(6, 1, 10));
-            Assert.AreEqual(7, Day22.SlowInc(7, 1, 10));
-            Assert.AreEqual(8, Day22.SlowInc(8, 1, 10));
-            Assert.AreEqual(9, Day22.SlowInc(9, 1, 10));
+            var expected = "0 1 2 3 4 5 6 7 8 9";
+            var actual = Day22.SolveAll(10, 10, new string[0]);
+            Assert.AreEqual(expected, actual);
         }
+
         [Test]
-        public void Test1F()
+        public void Test2()
         {
-            Assert.AreEqual(0, Day22.FastInc(0, 1, 10));
-            Assert.AreEqual(1, Day22.FastInc(1, 1, 10));
-            Assert.AreEqual(2, Day22.FastInc(2, 1, 10));
-            Assert.AreEqual(3, Day22.FastInc(3, 1, 10));
-            Assert.AreEqual(4, Day22.FastInc(4, 1, 10));
-            Assert.AreEqual(5, Day22.FastInc(5, 1, 10));
-            Assert.AreEqual(6, Day22.FastInc(6, 1, 10));
-            Assert.AreEqual(7, Day22.FastInc(7, 1, 10));
-            Assert.AreEqual(8, Day22.FastInc(8, 1, 10));
-            Assert.AreEqual(9, Day22.FastInc(9, 1, 10));
+            var expected = "9 8 7 6 5 4 3 2 1 0";
+            var actual = Day22.SolveAll(10, 10, new string[] { "deal into new stack" });
+            Assert.AreEqual(expected, actual);
         }
-        [Test]
-        public void Test3F()
-        {
-            Assert.AreEqual(0, Day22.FastInc(0, 3, 10));
-            Assert.AreEqual(7, Day22.FastInc(1, 3, 10));
-            Assert.AreEqual(4, Day22.FastInc(2, 3, 10));
-            Assert.AreEqual(1, Day22.FastInc(3, 3, 10));
-            Assert.AreEqual(8, Day22.FastInc(4, 3, 10));
-            Assert.AreEqual(5, Day22.FastInc(5, 3, 10));
-            Assert.AreEqual(2, Day22.FastInc(6, 3, 10));
-            Assert.AreEqual(9, Day22.FastInc(7, 3, 10));
-            Assert.AreEqual(6, Day22.FastInc(8, 3, 10));
-            Assert.AreEqual(3, Day22.FastInc(9, 3, 10));
-        }
+
         [Test]
         public void Test3()
         {
-            Assert.AreEqual(0, Day22.SlowInc(0, 3, 10));
-            Assert.AreEqual(7, Day22.SlowInc(1, 3, 10));
-            Assert.AreEqual(4, Day22.SlowInc(2, 3, 10));
-            Assert.AreEqual(1, Day22.SlowInc(3, 3, 10));
-            Assert.AreEqual(8, Day22.SlowInc(4, 3, 10));
-            Assert.AreEqual(5, Day22.SlowInc(5, 3, 10));
-            Assert.AreEqual(2, Day22.SlowInc(6, 3, 10));
-            Assert.AreEqual(9, Day22.SlowInc(7, 3, 10));
-            Assert.AreEqual(6, Day22.SlowInc(8, 3, 10));
-            Assert.AreEqual(3, Day22.SlowInc(9, 3, 10));
+            var expected = "0 1 2 3 4 5 6 7 8 9";
+            var actual = Day22.SolveAll(10, 10, new string[] { "deal into new stack", "deal into new stack" });
+            Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        public void Test4()
+        {
+            var expected = "3 2 1 0";
+            var actual = Day22.SolveAll(4, 4, new string[] { "deal into new stack" });
+            Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        public void Test5()
+        {
+            var expected = "3 4 5 6 7 8 9 0 1 2";
+            var actual = Day22.SolveAll(10, 10, new string[] { "cut 3" });
+            Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        public void Test6()
+        {
+            var expected = "6 7 8 9 0 1 2 3 4 5";
+            var actual = Day22.SolveAll(10, 10, new string[] { "cut -4" });
+            Assert.AreEqual(expected, actual);
         }
 
         [Test]
         public void Test7()
         {
-            Assert.AreEqual(0, Day22.SlowInc(0, 7, 10));
-            Assert.AreEqual(3, Day22.SlowInc(1, 7, 10));
-            Assert.AreEqual(6, Day22.SlowInc(2, 7, 10));
-            Assert.AreEqual(9, Day22.SlowInc(3, 7, 10));
-            Assert.AreEqual(2, Day22.SlowInc(4, 7, 10));
-            Assert.AreEqual(5, Day22.SlowInc(5, 7, 10));
-            Assert.AreEqual(8, Day22.SlowInc(6, 7, 10));
-            Assert.AreEqual(1, Day22.SlowInc(7, 7, 10));
-            Assert.AreEqual(4, Day22.SlowInc(8, 7, 10));
-            Assert.AreEqual(7, Day22.SlowInc(9, 7, 10));
+            var expected = "0 7 4 1 8 5 2 9 6 3";
+            var actual = Day22.SolveAll(10, 10, new string[] { "deal with increment 3" });
+            Assert.AreEqual(expected, actual);
         }
 
-
         [Test]
-        public void Test7F()
+        public void Test8()
         {
-            Assert.AreEqual(0, Day22.FastInc(0, 7, 10));
-            Assert.AreEqual(3, Day22.FastInc(1, 7, 10));
-            Assert.AreEqual(6, Day22.FastInc(2, 7, 10));
-            Assert.AreEqual(9, Day22.FastInc(3, 7, 10));
-            Assert.AreEqual(2, Day22.FastInc(4, 7, 10));
-            Assert.AreEqual(5, Day22.FastInc(5, 7, 10));
-            Assert.AreEqual(8, Day22.FastInc(6, 7, 10));
-            Assert.AreEqual(1, Day22.FastInc(7, 7, 10));
-            Assert.AreEqual(4, Day22.FastInc(8, 7, 10));
-            Assert.AreEqual(7, Day22.FastInc(9, 7, 10));
+            var expected = "0 3 6 9 2 5 8 1 4 7";
+            var actual = Day22.SolveAll(10, 10, new string[] { "deal with increment 7" });
+            Assert.AreEqual(expected, actual);
         }
 
         [Test]
         public void Test9()
         {
-            Assert.AreEqual(0, Day22.SlowInc(0, 9, 10));
-            Assert.AreEqual(9, Day22.SlowInc(1, 9, 10));
-            Assert.AreEqual(8, Day22.SlowInc(2, 9, 10));
-            Assert.AreEqual(7, Day22.SlowInc(3, 9, 10));
-            Assert.AreEqual(6, Day22.SlowInc(4, 9, 10));
-            Assert.AreEqual(5, Day22.SlowInc(5, 9, 10));
-            Assert.AreEqual(4, Day22.SlowInc(6, 9, 10));
-            Assert.AreEqual(3, Day22.SlowInc(7, 9, 10));
-            Assert.AreEqual(2, Day22.SlowInc(8, 9, 10));
-            Assert.AreEqual(1, Day22.SlowInc(9, 9, 10));
+            var expected = "0 1 2 3 4 5 6 7 8 9";
+            var actual = Day22.SolveAll(10, 10, new string[] { "deal with increment 1" });
+            Assert.AreEqual(expected, actual);
         }
 
-        [Test]
-        public void Test9F()
-        {
-            Assert.AreEqual(0, Day22.FastInc(0, 9, 10));
-            Assert.AreEqual(9, Day22.FastInc(1, 9, 10));
-            Assert.AreEqual(8, Day22.FastInc(2, 9, 10));
-            Assert.AreEqual(7, Day22.FastInc(3, 9, 10));
-            Assert.AreEqual(6, Day22.FastInc(4, 9, 10));
-            Assert.AreEqual(5, Day22.FastInc(5, 9, 10));
-            Assert.AreEqual(4, Day22.FastInc(6, 9, 10));
-            Assert.AreEqual(3, Day22.FastInc(7, 9, 10));
-            Assert.AreEqual(2, Day22.FastInc(8, 9, 10));
-            Assert.AreEqual(1, Day22.FastInc(9, 9, 10));
-        }
     }
 }
